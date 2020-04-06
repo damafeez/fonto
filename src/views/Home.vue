@@ -18,6 +18,7 @@ export default {
       fontSize: 25,
       marginRight: 11,
       marginBottom: 5,
+      tolerance: 20,
       downloadName: 'fonto.jpg',
       width: 2500,
       image: null,
@@ -81,7 +82,7 @@ export default {
   },
   methods: {
     async editImage() {
-      const { image } = this
+      const { image, tolerance } = this
       if (!this.image) return
       const imgCanvas = document.createElement('canvas')
       imgCanvas.width = this.canvasSize.width
@@ -98,7 +99,7 @@ export default {
       )
 
       const processedImageData = await this.$worker.run(
-        function processImage({ imgData, textData }) {
+        function processImage({ imgData, textData, tolerance }) {
           const { data } = imgData
           for (let i = 0; i < imgData.data.length; i += 4) {
             const r = data[i + 0]
@@ -109,7 +110,7 @@ export default {
               (textData[i + 0] === 0 &&
                 textData[i + 1] === 0 &&
                 textData[i + 2] === 0) ||
-              gray < 20
+              gray < tolerance
             ) {
               data[i + 0] = 0
               data[i + 1] = 0
@@ -127,6 +128,7 @@ export default {
           {
             textData: Float32Array.from(this.textData.data),
             imgData,
+            tolerance,
           },
         ],
       )
@@ -157,6 +159,7 @@ export default {
     },
   },
   samples: [
+    require('@/assets/sample.jpg'),
     require('@/assets/sample1.jpg'),
     require('@/assets/sample2.jpg'),
     require('@/assets/sample3.jpg'),
