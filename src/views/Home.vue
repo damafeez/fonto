@@ -3,59 +3,128 @@
     <main ref="container">
       <canvas ref="canvas"></canvas>
     </main>
-    <aside></aside>
+    <aside>
+      <TextInput
+        step="10"
+        min="15"
+        max="1000"
+        v-model.number="config.fontSize"
+        label="Font size"
+      />
+      <TextInput
+        step="5"
+        min="0"
+        max="200"
+        v-model.number="config.treshold"
+        label="Treshold"
+      />
+      <TextInput
+        step="5"
+        min="0"
+        max="100"
+        v-model.number="config.marginRight"
+        label="X-margin"
+      />
+      <TextInput
+        step="5"
+        min="0"
+        max="100"
+        v-model.number="config.marginBottom"
+        label="Y-margin"
+      />
+      <TextInput
+        step="250"
+        min="1500"
+        max="5000"
+        v-model.number="config.width"
+        label="Resolution"
+      />
+      <TextInput
+        class="text"
+        type="textarea"
+        v-model="config.text"
+        label="Text"
+      />
+    </aside>
   </div>
 </template>
 
 <script>
-import { randomFrom } from '@/utils'
+import { randomFrom, debounce } from '@/utils'
+import TextInput from '@/components/TextInput'
 
 export default {
-  name: 'App',
+  name: 'Home',
+  components: {
+    TextInput,
+  },
   data() {
     return {
-      text: 'Please wash your hands',
-      fontSize: 25,
-      marginRight: 11,
-      marginBottom: 5,
-      tolerance: 20,
-      downloadName: 'fonto.jpg',
-      width: 2500,
+      config: {
+        text: 'Please wash your hands',
+        fontSize: 25,
+        marginRight: 15,
+        marginBottom: 5,
+        treshold: 20,
+        width: 2500,
+        downloadName: 'fonto.jpg',
+      },
       image: null,
     }
   },
-  async mounted() {
-    const sample = randomFrom(this.$options.samples)
-    this.image = await this.loadImage(sample)
-  },
-  watch: {
-    async image() {
-      this.editImage()
-    },
-    canvasSize() {
-      const { canvas } = this.$refs
-      if (!canvas) return
-
-      canvas.width = this.canvasSize.width
-      canvas.height = this.canvasSize.height
-    },
-  },
   computed: {
+    text() {
+      return this.config.text || 'Please wash your hands'
+    },
+    fontSize() {
+      return this.minMax(this.config.fontSize, 15, 1000)
+    },
+    marginRight() {
+      return this.minMax(this.config.marginRight)
+    },
+    marginBottom() {
+      return this.minMax(this.config.marginBottom)
+    },
+    treshold() {
+      return this.minMax(this.config.treshold, 0, 200)
+    },
+    width() {
+      return this.minMax(this.config.width, 1000, 5000)
+    },
+    configWatcher() {
+      return (
+        this.text,
+        this.fontSize,
+        this.marginRight,
+        this.marginBottom,
+        this.treshold,
+        this.canvasSize,
+        this.image,
+        new Date()
+      )
+    },
     canvasSize() {
-      if (!this.image) return { width: 0, height: 0 }
-      const aspect = this.image.width / this.image.height
-      const { width } = this
+      const { image, width } = this
+      if (!image) return
+      const aspect = image.width / image.height
 
       const height = width / aspect
 
       return { width, height }
     },
     textData() {
+      const {
+        text,
+        fontSize: tHeight,
+        marginRight,
+        marginBottom,
+        canvasSize,
+      } = this
+      if (!canvasSize) return []
       const canvas = document.createElement('canvas')
-      canvas.width = this.canvasSize.width
-      canvas.height = this.canvasSize.height
-      const { text, fontSize: tHeight, marginRight, marginBottom } = this
       const ctx = canvas.getContext('2d')
+      canvas.width = canvasSize.width
+      canvas.height = canvasSize.height
 
       ctx.font = `${tHeight}px sans-serif`
 
@@ -77,16 +146,40 @@ export default {
         }
       }
 
-      return ctx.getImageData(0, 0, canvas.width, canvas.height)
+      return Float32Array.from(
+        ctx.getImageData(0, 0, canvas.width, canvas.height).data,
+      )
+    },
+  },
+  async beforeMount() {
+    const sample = randomFrom(this.$options.samples)
+    this.image = await this.loadImage(sample)
+  },
+  watch: {
+    configWatcher() {
+      if (this.image) this.editImage()
+    },
+    canvasSize() {
+      const { canvas } = this.$refs
+      if (!canvas) return
+
+      canvas.width = this.canvasSize.width
+      canvas.height = this.canvasSize.height
     },
   },
   methods: {
-    async editImage() {
-      const { image, tolerance } = this
-      if (!this.image) return
+    minMax(value, min = 0, max = 100) {
+      const val = Number(value)
+
+      if (val <= min) return min
+      if (val >= max) return max
+      return val
+    },
+    editImage: debounce(async function() {
+      const { image, treshold, canvasSize, textData } = this
       const imgCanvas = document.createElement('canvas')
-      imgCanvas.width = this.canvasSize.width
-      imgCanvas.height = this.canvasSize.height
+      imgCanvas.width = canvasSize.width
+      imgCanvas.height = canvasSize.height
 
       const imgCtx = imgCanvas.getContext('2d')
 
@@ -99,7 +192,7 @@ export default {
       )
 
       const processedImageData = await this.$worker.run(
-        function processImage({ imgData, textData, tolerance }) {
+        function processImage({ imgData, textData, treshold }) {
           const { data } = imgData
           for (let i = 0; i < imgData.data.length; i += 4) {
             const r = data[i + 0]
@@ -110,7 +203,7 @@ export default {
               (textData[i + 0] === 0 &&
                 textData[i + 1] === 0 &&
                 textData[i + 2] === 0) ||
-              gray < tolerance
+              gray < treshold
             ) {
               data[i + 0] = 0
               data[i + 1] = 0
@@ -126,16 +219,16 @@ export default {
         },
         [
           {
-            textData: Float32Array.from(this.textData.data),
+            textData,
             imgData,
-            tolerance,
+            treshold,
           },
         ],
       )
 
       const ctx = this.$refs.canvas.getContext('2d')
       ctx.putImageData(processedImageData, 0, 0)
-    },
+    }, 500),
     loadFile(file) {
       const reader = new FileReader()
       reader.onloadend = async () => {
@@ -173,12 +266,32 @@ export default {
 main {
   overflow: scroll;
   display: flex;
+  min-height: 100vh;
   canvas {
     margin: auto;
     max-height: 100vh;
     @media screen and (min-width: 800px) {
       max-width: 100vw;
       max-height: 130vh;
+    }
+  }
+}
+aside {
+  position: fixed;
+  width: 15rem;
+  right: 2rem;
+  top: 2.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  padding: 0.5rem;
+  @include flex-gap(0.5rem);
+
+  background: rgba(51, 51, 51, 0.3);
+  border-radius: 5px;
+  > * {
+    width: calc(50% - 1rem);
+    &.text {
+      width: 100%;
     }
   }
 }

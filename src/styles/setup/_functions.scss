@@ -1,0 +1,17 @@
+@function join($list, $separator: '') {
+  $result: null;
+
+  @for $i from 1 through length($list) {
+    $current: nth($list, $i);
+    $result: if(
+      $i != length($list),
+      $result#{$current}#{$separator},
+      $result#{$current}
+    );
+  }
+
+  @return $result;
+}
+@function negate($list) {
+  @return -(join($list, ' -'));
+}

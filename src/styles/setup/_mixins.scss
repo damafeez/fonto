@@ -1,0 +1,14 @@
+@mixin flex-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+@mixin flex-gap($values: 1rem) {
+  // this mixin will allow us to apply the grid-gap equivalence to flex containers
+  // i.e margins within flex items but not at the edges
+  // element should be wrapped with overflow-hidden to avoid overflowing page
+  margin: negate($values);
+  & > * {
+    margin: $values;
+  }
+}
