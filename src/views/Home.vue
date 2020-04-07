@@ -45,6 +45,12 @@
         v-model="config.text"
         label="Text"
       />
+      <input
+        type="file"
+        accept=".png, .jpg, .jpeg"
+        @change="loadFile($event.target.files[0])"
+      />
+      <button @click="download">Download</button>
     </aside>
   </div>
 </template>
@@ -67,8 +73,8 @@ export default {
         marginBottom: 5,
         treshold: 20,
         width: 2500,
-        downloadName: 'fonto.jpg',
       },
+      downloadName: 'fonto.jpg',
       image: null,
     }
   },
@@ -250,6 +256,15 @@ export default {
       arr.pop()
       return [...arr, '_fonto.jpg'].join('')
     },
+    download() {
+      const { canvas } = this.$refs
+      if (canvas) {
+        const link = document.createElement('a')
+        link.download = this.downloadName
+        link.href = canvas.toDataURL()
+        link.click()
+      }
+    },
   },
   samples: [
     require('@/assets/sample.jpg'),
@@ -286,13 +301,27 @@ aside {
   padding: 0.5rem;
   @include flex-gap(0.5rem);
 
-  background: rgba(51, 51, 51, 0.3);
+  background: rgba(51, 51, 51, 0.6);
   border-radius: 5px;
   > * {
     width: calc(50% - 1rem);
     &.text {
       width: 100%;
     }
+  }
+
+  input[type='file'] {
+    width: 40%;
+  }
+  button {
+    @include flex-center;
+    background: rgba(130, 130, 130, 0.25);
+    box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.12);
+    border-radius: 5px;
+    color: white;
+    width: 6rem;
+    height: 2rem;
+    cursor: pointer;
   }
 }
 </style>
