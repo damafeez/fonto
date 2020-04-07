@@ -1,5 +1,6 @@
 {
-  "name": "fonto-vuekkk",
+  "name": "fonto",
+  "description": "A webtool for creating beautiful textified photographs",
   "version": "0.1.0",
   "private": true,
   "scripts": {
