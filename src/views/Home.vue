@@ -98,9 +98,6 @@ export default {
     width() {
       return this.minMax(this.config.width, 50, 3500)
     },
-    editImageWatcher() {
-      return this.textData, this.treshold, new Date()
-    },
     textDataParams() {
       return {
         text: this.text,
@@ -124,12 +121,17 @@ export default {
     const sample = randomFrom(this.$options.samples)
     this.image = await this.loadImage(sample)
   },
+  created() {
+    this.debouncedEditImage = debounce(this.editImage, 1000)
+    this.debouncedGetTextData = debounce(getTextData, 1000)
+  },
   watch: {
-    editImageWatcher() {
-      if (this.image) this.editImage()
+    treshold() {
+      this.debouncedEditImage()
     },
     async textDataParams(params) {
-      this.textData = await this.getTextData(params)
+      this.textData = await this.debouncedGetTextData(params)
+      this.editImage()
     },
     canvasSize() {
       const { canvas } = this.$refs
@@ -147,8 +149,9 @@ export default {
       if (val >= max) return max
       return val
     },
-    editImage: debounce(async function() {
+    editImage() {
       const { image, treshold, canvasSize, textData } = this
+      if (!image) return
       const imgCanvas = document.createElement('canvas')
       imgCanvas.width = canvasSize.width
       imgCanvas.height = canvasSize.height
@@ -162,17 +165,19 @@ export default {
         imgCanvas.width,
         imgCanvas.height,
       )
-      const processedImageData = await this.$worker.run(processImage, [
-        {
-          textData,
-          imgData,
-          treshold,
-        },
-      ])
-      const ctx = this.$refs.canvas.getContext('2d')
-      ctx.putImageData(processedImageData, 0, 0)
-    }, 500),
-    getTextData: debounce(getTextData, 500),
+      this.$worker
+        .run(processImage, [
+          {
+            textData,
+            imgData,
+            treshold,
+          },
+        ])
+        .then(processedImageData => {
+          const ctx = this.$refs.canvas.getContext('2d')
+          ctx.putImageData(processedImageData, 0, 0)
+        })
+    },
     loadFile(file) {
       const reader = new FileReader()
       reader.onloadend = async () => {

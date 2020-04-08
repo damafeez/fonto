@@ -11,10 +11,6 @@ function debounce(func, interval = 200) {
         resolve(func.apply(this, args))
       }
       clearTimeout(timeout)
-      if (!timeout) {
-        timeout = true
-        return resolve(func.apply(this, args))
-      }
       timeout = setTimeout(later, interval)
     })
   }
