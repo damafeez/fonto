@@ -35,9 +35,12 @@ export default {
   },
   methods: {
     onBlur(e) {
-      const { type, value, min } = e.target
-      if (type === 'number' && (!value || value < min))
-        this.$emit('input', min || value)
+      const { type, value, min, max } = e.target
+      if (type === 'number') {
+        if (min !== '' && (!value || +value <= +min)) this.$emit('input', min)
+        else if (max !== '' && (!value || +value >= +max))
+          this.$emit('input', max)
+      }
     },
   },
 }
@@ -67,10 +70,9 @@ export default {
     }
   }
   label {
-    padding: 0.5rem;
+    padding: 0 0.5rem;
     font-size: 0.8rem;
     cursor: pointer;
-    margin-left: auto;
   }
 }
 </style>
