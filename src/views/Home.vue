@@ -6,13 +6,13 @@
     <aside>
       <TextInput
         step="10"
-        min="15"
+        min="5"
         max="1000"
         v-model.number="config.fontSize"
         label="Font size"
       />
       <TextInput
-        step="5"
+        step="10"
         min="0"
         max="200"
         v-model.number="config.treshold"
@@ -34,8 +34,8 @@
       />
       <TextInput
         step="250"
-        min="1500"
-        max="5000"
+        min="500"
+        max="3500"
         v-model.number="config.width"
         label="Resolution"
       />
@@ -56,7 +56,7 @@
 </template>
 
 <script>
-import { randomFrom, debounce } from '@/utils'
+import { randomFrom, debounce, getTextData, processImage } from '@/utils'
 import TextInput from '@/components/TextInput'
 
 export default {
@@ -68,14 +68,15 @@ export default {
     return {
       config: {
         text: 'Please wash your hands',
-        fontSize: 25,
-        marginRight: 15,
+        fontSize: 20,
+        marginRight: 10,
         marginBottom: 5,
         treshold: 20,
-        width: 2500,
+        width: 2000,
       },
       downloadName: 'fonto.jpg',
       image: null,
+      textData: [],
     }
   },
   computed: {
@@ -83,7 +84,7 @@ export default {
       return this.config.text || 'Please wash your hands'
     },
     fontSize() {
-      return this.minMax(this.config.fontSize, 15, 1000)
+      return this.minMax(this.config.fontSize, 5, 1000)
     },
     marginRight() {
       return this.minMax(this.config.marginRight)
@@ -95,19 +96,19 @@ export default {
       return this.minMax(this.config.treshold, 0, 200)
     },
     width() {
-      return this.minMax(this.config.width, 1000, 5000)
+      return this.minMax(this.config.width, 50, 3500)
     },
-    configWatcher() {
-      return (
-        this.text,
-        this.fontSize,
-        this.marginRight,
-        this.marginBottom,
-        this.treshold,
-        this.canvasSize,
-        this.image,
-        new Date()
-      )
+    editImageWatcher() {
+      return this.textData, this.treshold, new Date()
+    },
+    textDataParams() {
+      return {
+        text: this.text,
+        fontSize: this.fontSize,
+        marginRight: this.marginRight,
+        marginBottom: this.marginBottom,
+        canvasSize: this.canvasSize,
+      }
     },
     canvasSize() {
       const { image, width } = this
@@ -118,52 +119,17 @@ export default {
 
       return { width, height }
     },
-    textData() {
-      const {
-        text,
-        fontSize: tHeight,
-        marginRight,
-        marginBottom,
-        canvasSize,
-      } = this
-      if (!canvasSize) return []
-      const canvas = document.createElement('canvas')
-      const ctx = canvas.getContext('2d')
-      canvas.width = canvasSize.width
-      canvas.height = canvasSize.height
-
-      ctx.font = `${tHeight}px sans-serif`
-
-      // background
-      ctx.fillStyle = 'black'
-      ctx.fillRect(0, 0, canvas.width, canvas.height)
-
-      ctx.fillStyle = 'white'
-      const { width: tWidth } = ctx.measureText(text)
-      let distx = 0
-      let disty = 0
-
-      while (disty < canvas.height) {
-        ctx.fillText(text, distx, disty)
-        distx += tWidth + marginRight
-        if (distx >= canvas.width) {
-          disty += tHeight + marginBottom
-          distx = Math.random() * -100
-        }
-      }
-
-      return Float32Array.from(
-        ctx.getImageData(0, 0, canvas.width, canvas.height).data,
-      )
-    },
   },
   async beforeMount() {
     const sample = randomFrom(this.$options.samples)
     this.image = await this.loadImage(sample)
   },
   watch: {
-    configWatcher() {
+    editImageWatcher() {
       if (this.image) this.editImage()
+    },
+    async textDataParams(params) {
+      this.textData = await this.getTextData(params)
     },
     canvasSize() {
       const { canvas } = this.$refs
@@ -196,45 +162,17 @@ export default {
         imgCanvas.width,
         imgCanvas.height,
       )
-
-      const processedImageData = await this.$worker.run(
-        function processImage({ imgData, textData, treshold }) {
-          const { data } = imgData
-          for (let i = 0; i < imgData.data.length; i += 4) {
-            const r = data[i + 0]
-            const g = data[i + 1]
-            const b = data[i + 2]
-            const gray = 0.2 * r + 0.72 * g + 0.07 * b
-            if (
-              (textData[i + 0] === 0 &&
-                textData[i + 1] === 0 &&
-                textData[i + 2] === 0) ||
-              gray < treshold
-            ) {
-              data[i + 0] = 0
-              data[i + 1] = 0
-              data[i + 2] = 0
-            } else {
-              data[i + 0] = gray
-              data[i + 1] = gray
-              data[i + 2] = gray
-            }
-          }
-
-          return imgData
+      const processedImageData = await this.$worker.run(processImage, [
+        {
+          textData,
+          imgData,
+          treshold,
         },
-        [
-          {
-            textData,
-            imgData,
-            treshold,
-          },
-        ],
-      )
-
+      ])
       const ctx = this.$refs.canvas.getContext('2d')
       ctx.putImageData(processedImageData, 0, 0)
     }, 500),
+    getTextData: debounce(getTextData, 500),
     loadFile(file) {
       const reader = new FileReader()
       reader.onloadend = async () => {
