@@ -54,7 +54,7 @@ function getTextData({
   )
 }
 
-function processImage({ imgData, textData, treshold }) {
+function processImage({ imgData, textData, bTreshold, wTreshold }) {
   const { data } = imgData
   for (let i = 0; i < imgData.data.length; i += 4) {
     const r = data[i + 0]
@@ -65,7 +65,8 @@ function processImage({ imgData, textData, treshold }) {
       (textData[i + 0] === 0 &&
         textData[i + 1] === 0 &&
         textData[i + 2] === 0) ||
-      gray < treshold
+      gray < bTreshold ||
+      gray > 255 - wTreshold
     ) {
       data[i + 0] = 0
       data[i + 1] = 0

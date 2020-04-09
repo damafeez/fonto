@@ -15,8 +15,8 @@
         step="10"
         min="0"
         max="200"
-        v-model.number="config.treshold"
-        label="Treshold"
+        v-model.number="config.bTreshold"
+        label="B-Treshold"
       />
       <TextInput
         step="5"
@@ -33,18 +33,20 @@
         label="Y-margin"
       />
       <TextInput
+        step="5"
+        min="0"
+        max="255"
+        v-model.number="config.wTreshold"
+        label="W-Treshold"
+      />
+      <TextInput
         step="250"
         min="500"
         max="3500"
         v-model.number="config.width"
         label="Resolution"
       />
-      <TextInput
-        class="text"
-        type="textarea"
-        v-model="config.text"
-        label="Text"
-      />
+      <TextInput class="text" type="textarea" v-model="config.text" />
       <input
         type="file"
         accept=".png, .jpg, .jpeg"
@@ -71,7 +73,8 @@ export default {
         fontSize: 20,
         marginRight: 10,
         marginBottom: 5,
-        treshold: 20,
+        bTreshold: 20,
+        wTreshold: 0,
         width: 2000,
       },
       downloadName: 'fonto.jpg',
@@ -92,11 +95,17 @@ export default {
     marginBottom() {
       return this.minMax(this.config.marginBottom)
     },
-    treshold() {
-      return this.minMax(this.config.treshold, 0, 200)
+    bTreshold() {
+      return this.minMax(this.config.bTreshold, 0, 200)
+    },
+    wTreshold() {
+      return this.minMax(this.config.wTreshold, 0, 255)
     },
     width() {
       return this.minMax(this.config.width, 50, 3500)
+    },
+    editWatcher() {
+      return this.bTreshold, this.wTreshold, new Date()
     },
     textDataParams() {
       return {
@@ -126,7 +135,7 @@ export default {
     this.debouncedGetTextData = debounce(getTextData, 1000)
   },
   watch: {
-    treshold() {
+    editWatcher() {
       this.debouncedEditImage()
     },
     async textDataParams(params) {
@@ -150,7 +159,7 @@ export default {
       return val
     },
     editImage() {
-      const { image, treshold, canvasSize, textData } = this
+      const { image, bTreshold, wTreshold, canvasSize, textData } = this
       if (!image) return
       const imgCanvas = document.createElement('canvas')
       imgCanvas.width = canvasSize.width
@@ -170,7 +179,8 @@ export default {
           {
             textData,
             imgData,
-            treshold,
+            bTreshold,
+            wTreshold,
           },
         ])
         .then(processedImageData => {
