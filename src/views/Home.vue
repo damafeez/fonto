@@ -4,6 +4,8 @@
       <canvas ref="canvas"></canvas>
     </main>
     <aside>
+      <!-- TODO: control input should come in as config and be looped over -->
+      <!-- TODO: controls should be extracted to separate component -->
       <TextInput
         step="10"
         min="5"
@@ -16,7 +18,7 @@
         min="0"
         max="200"
         v-model.number="config.bTreshold"
-        label="B-Treshold"
+        label="Black-Treshold"
       />
       <TextInput
         step="5"
@@ -37,7 +39,7 @@
         min="0"
         max="255"
         v-model.number="config.wTreshold"
-        label="W-Treshold"
+        label="White-Treshold"
       />
       <TextInput
         step="250"
@@ -45,6 +47,20 @@
         max="3500"
         v-model.number="config.width"
         label="Resolution"
+      />
+      <TextInput
+        step="0.5"
+        min="1"
+        max="50"
+        v-model.number="config.contrast"
+        label="Contrast"
+      />
+      <TextInput
+        step="0.1"
+        min="0"
+        max="5"
+        v-model.number="config.sepia"
+        label="Sepia"
       />
       <TextInput class="text" type="textarea" v-model="config.text" />
       <input
@@ -76,10 +92,13 @@ export default {
         bTreshold: 20,
         wTreshold: 0,
         width: 2000,
+        contrast: 1,
+        sepia: 0,
       },
       downloadName: 'fonto.jpg',
       image: null,
       textData: [],
+      processedImageData: [],
     }
   },
   computed: {
@@ -104,8 +123,17 @@ export default {
     width() {
       return this.minMax(this.config.width, 50, 3500)
     },
+    filter() {
+      const contrast = this.minMax(this.config.contrast, 1, 50)
+      const sepia = this.minMax(this.config.sepia, 0, 5)
+
+      return `contrast(${contrast}) sepia(${sepia})`
+    },
     editWatcher() {
       return this.bTreshold, this.wTreshold, new Date()
+    },
+    imgRenderWatcher() {
+      return this.processedImageData, this.filter, new Date()
     },
     textDataParams() {
       return {
@@ -138,6 +166,9 @@ export default {
     editWatcher() {
       this.debouncedEditImage()
     },
+    imgRenderWatcher() {
+      this.renderImage()
+    },
     async textDataParams(params) {
       this.textData = await this.debouncedGetTextData(params)
       this.editImage()
@@ -157,6 +188,13 @@ export default {
       if (val <= min) return min
       if (val >= max) return max
       return val
+    },
+    async renderImage() {
+      const { processedImageData, filter } = this
+      const bitmap = await createImageBitmap(processedImageData)
+      const ctx = this.$refs.canvas.getContext('2d')
+      ctx.filter = filter
+      ctx.drawImage(bitmap, 0, 0)
     },
     editImage() {
       const { image, bTreshold, wTreshold, canvasSize, textData } = this
@@ -184,8 +222,7 @@ export default {
           },
         ])
         .then(processedImageData => {
-          const ctx = this.$refs.canvas.getContext('2d')
-          ctx.putImageData(processedImageData, 0, 0)
+          this.processedImageData = processedImageData
         })
     },
     loadFile(file) {
