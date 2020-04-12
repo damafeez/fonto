@@ -3,131 +3,44 @@
     <main ref="container">
       <canvas ref="canvas"></canvas>
     </main>
-    <aside>
-      <!-- TODO: control input should come in as config and be looped over -->
-      <!-- TODO: controls should be extracted to separate component -->
-      <TextInput
-        step="10"
-        min="5"
-        max="1000"
-        v-model.number="config.fontSize"
-        label="Font size"
-      />
-      <TextInput
-        step="10"
-        min="0"
-        max="200"
-        v-model.number="config.bTreshold"
-        label="Black-Treshold"
-      />
-      <TextInput
-        step="5"
-        min="0"
-        max="100"
-        v-model.number="config.marginRight"
-        label="X-margin"
-      />
-      <TextInput
-        step="5"
-        min="0"
-        max="100"
-        v-model.number="config.marginBottom"
-        label="Y-margin"
-      />
-      <TextInput
-        step="5"
-        min="0"
-        max="255"
-        v-model.number="config.wTreshold"
-        label="White-Treshold"
-      />
-      <TextInput
-        step="250"
-        min="500"
-        max="3500"
-        v-model.number="config.width"
-        label="Resolution"
-      />
-      <TextInput
-        step="0.5"
-        min="1"
-        max="50"
-        v-model.number="config.contrast"
-        label="Contrast"
-      />
-      <TextInput
-        step="0.1"
-        min="0"
-        max="5"
-        v-model.number="config.sepia"
-        label="Sepia"
-      />
-      <TextInput class="text" type="textarea" v-model="config.text" />
-      <input
-        type="file"
-        accept=".png, .jpg, .jpeg"
-        @change="loadFile($event.target.files[0])"
-      />
-      <button @click="download">Download</button>
-    </aside>
+    <Controls
+      :config="$options.config"
+      :canvas="$refs.canvas"
+      @controlChange="modifyData(...$event)"
+    />
   </div>
 </template>
 
 <script>
+import Controls from '@/components/Controls'
 import { randomFrom, debounce, getTextData, processImage } from '@/utils'
-import TextInput from '@/components/TextInput'
+import { config } from '@/fixtures'
 
 export default {
   name: 'Home',
   components: {
-    TextInput,
+    Controls,
   },
   data() {
     return {
-      config: {
-        text: 'Please wash your hands',
-        fontSize: 20,
-        marginRight: 10,
-        marginBottom: 5,
-        bTreshold: 20,
-        wTreshold: 0,
-        width: 2000,
-        contrast: 1,
-        sepia: 0,
-      },
-      downloadName: 'fonto.jpg',
+      text: '',
+      fontSize: null,
+      bTreshold: null,
+      xMargin: null,
+      yMargin: null,
+      wTreshold: null,
+      resolution: null,
+      contrast: null,
+      sepia: null,
       image: null,
-      textData: [],
-      processedImageData: [],
+      textData: null,
+      processedImageData: null,
+      downloadName: 'fonto.jpg',
     }
   },
   computed: {
-    text() {
-      return this.config.text || 'Please wash your hands'
-    },
-    fontSize() {
-      return this.minMax(this.config.fontSize, 5, 1000)
-    },
-    marginRight() {
-      return this.minMax(this.config.marginRight)
-    },
-    marginBottom() {
-      return this.minMax(this.config.marginBottom)
-    },
-    bTreshold() {
-      return this.minMax(this.config.bTreshold, 0, 200)
-    },
-    wTreshold() {
-      return this.minMax(this.config.wTreshold, 0, 255)
-    },
-    width() {
-      return this.minMax(this.config.width, 50, 3500)
-    },
     filter() {
-      const contrast = this.minMax(this.config.contrast, 1, 50)
-      const sepia = this.minMax(this.config.sepia, 0, 5)
-
-      return `contrast(${contrast}) sepia(${sepia})`
+      return `contrast(${this.contrast}) sepia(${this.sepia})`
     },
     editWatcher() {
       return this.bTreshold, this.wTreshold, new Date()
@@ -139,18 +52,17 @@ export default {
       return {
         text: this.text,
         fontSize: this.fontSize,
-        marginRight: this.marginRight,
-        marginBottom: this.marginBottom,
+        xMargin: this.xMargin,
+        yMargin: this.yMargin,
         canvasSize: this.canvasSize,
       }
     },
     canvasSize() {
-      const { image, width } = this
+      const { image, resolution: width } = this
       if (!image) return
       const aspect = image.width / image.height
 
       const height = width / aspect
-
       return { width, height }
     },
   },
@@ -161,33 +73,42 @@ export default {
   created() {
     this.debouncedEditImage = debounce(this.editImage, 1000)
     this.debouncedGetTextData = debounce(getTextData, 1000)
+
+    // set data from config
+    const {
+      $options: { config },
+    } = this
+
+    Object.keys(config).forEach(key => this.modifyData(key, config[key].value))
   },
   watch: {
     editWatcher() {
-      this.debouncedEditImage()
+      if (this.textData) {
+        this.debouncedEditImage()
+      }
     },
     imgRenderWatcher() {
-      this.renderImage()
+      if (this.processedImageData) {
+        this.renderImage()
+      }
     },
     async textDataParams(params) {
-      this.textData = await this.debouncedGetTextData(params)
-      this.editImage()
+      if (this.canvasSize) {
+        this.textData = await this.debouncedGetTextData(params)
+        this.editImage()
+      }
     },
     canvasSize() {
       const { canvas } = this.$refs
-      if (!canvas) return
-
-      canvas.width = this.canvasSize.width
-      canvas.height = this.canvasSize.height
+      if (canvas) {
+        canvas.width = this.canvasSize.width
+        canvas.height = this.canvasSize.height
+      }
     },
   },
   methods: {
-    minMax(value, min = 0, max = 100) {
-      const val = Number(value)
-
-      if (val <= min) return min
-      if (val >= max) return max
-      return val
+    modifyData(name, value) {
+      this.$data[name] = value
     },
     async renderImage() {
       const { processedImageData, filter } = this
@@ -246,15 +167,6 @@ export default {
       arr.pop()
       return [...arr, '_fonto.jpg'].join('')
     },
-    download() {
-      const { canvas } = this.$refs
-      if (canvas) {
-        const link = document.createElement('a')
-        link.download = this.downloadName
-        link.href = canvas.toDataURL()
-        link.click()
-      }
-    },
   },
   samples: [
     require('@/assets/sample.jpg'),
@@ -264,6 +176,7 @@ export default {
     require('@/assets/sample4.jpg'),
     require('@/assets/sample5.jpg'),
   ],
+  config,
 }
 </script>
 
@@ -279,39 +192,6 @@ main {
       max-width: 100vw;
       max-height: 130vh;
     }
-  }
-}
-aside {
-  position: fixed;
-  width: 15rem;
-  right: 2rem;
-  top: 2.5rem;
-  display: flex;
-  flex-wrap: wrap;
-  padding: 0.5rem;
-  @include flex-gap(0.5rem);
-
-  background: rgba(51, 51, 51, 0.6);
-  border-radius: 5px;
-  > * {
-    width: calc(50% - 1rem);
-    &.text {
-      width: 100%;
-    }
-  }
-
-  input[type='file'] {
-    width: 40%;
-  }
-  button {
-    @include flex-center;
-    background: rgba(130, 130, 130, 0.25);
-    box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.12);
-    border-radius: 5px;
-    color: white;
-    width: 6rem;
-    height: 2rem;
-    cursor: pointer;
   }
 }
 </style>

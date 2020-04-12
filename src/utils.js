@@ -19,11 +19,10 @@ function debounce(func, interval = 200) {
 function getTextData({
   text,
   fontSize: tHeight,
-  marginRight,
-  marginBottom,
+  xMargin: marginRight,
+  yMargin: marginBottom,
   canvasSize,
 }) {
-  if (!canvasSize) return []
   const canvas = document.createElement('canvas')
   const ctx = canvas.getContext('2d')
   canvas.width = canvasSize.width
