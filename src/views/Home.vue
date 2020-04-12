@@ -5,7 +5,8 @@
     </main>
     <Controls
       :config="$options.config"
-      :canvas="$refs.canvas"
+      @download="download"
+      @loadFile="loadFile"
       @controlChange="modifyData(...$event)"
     />
   </div>
@@ -13,7 +14,7 @@
 
 <script>
 import Controls from '@/components/Controls'
-import { randomFrom, debounce, getTextData, processImage } from '@/utils'
+import { randomFrom, getTextData, processImage } from '@/utils'
 import { config } from '@/fixtures'
 
 export default {
@@ -43,7 +44,7 @@ export default {
       return `contrast(${this.contrast}) sepia(${this.sepia})`
     },
     editWatcher() {
-      return this.bTreshold, this.wTreshold, new Date()
+      return this.textData, this.bTreshold, this.wTreshold, new Date()
     },
     imgRenderWatcher() {
       return this.processedImageData, this.filter, new Date()
@@ -71,9 +72,6 @@ export default {
     this.image = await this.loadImage(sample)
   },
   created() {
-    this.debouncedEditImage = debounce(this.editImage, 1000)
-    this.debouncedGetTextData = debounce(getTextData, 1000)
-
     // set data from config
     const {
       $options: { config },
@@ -84,7 +82,7 @@ export default {
   watch: {
     editWatcher() {
       if (this.textData) {
-        this.debouncedEditImage()
+        this.editImage()
       }
     },
     imgRenderWatcher() {
@@ -94,8 +92,7 @@ export default {
     },
     async textDataParams(params) {
       if (this.canvasSize) {
-        this.textData = await this.debouncedGetTextData(params)
-        this.editImage()
+        this.textData = await getTextData(params)
       }
     },
     canvasSize() {
@@ -166,6 +163,15 @@ export default {
       const arr = name.split('.')
       arr.pop()
       return [...arr, '_fonto.jpg'].join('')
+    },
+    download() {
+      const { canvas } = this.$refs
+      if (canvas) {
+        const link = document.createElement('a')
+        link.download = this.downloadName
+        link.href = canvas.toDataURL()
+        link.click()
+      }
     },
   },
   samples: [

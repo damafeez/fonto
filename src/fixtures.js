@@ -5,6 +5,7 @@ const config = {
     step: 5,
     min: 5,
     max: 1000,
+    type: 'number',
   },
   bTreshold: {
     label: 'Black Treshold',
@@ -12,6 +13,7 @@ const config = {
     step: 10,
     min: 0,
     max: 200,
+    type: 'number',
   },
   xMargin: {
     label: 'X-Margin',
@@ -19,6 +21,7 @@ const config = {
     step: 5,
     min: 0,
     max: 100,
+    type: 'number',
   },
   yMargin: {
     label: 'Y-Margin',
@@ -26,6 +29,7 @@ const config = {
     step: 5,
     min: 0,
     max: 100,
+    type: 'number',
   },
   wTreshold: {
     label: 'White Treshold',
@@ -33,6 +37,7 @@ const config = {
     step: 5,
     min: 0,
     max: 255,
+    type: 'number',
   },
   resolution: {
     label: 'Resolution',
@@ -40,6 +45,7 @@ const config = {
     step: 250,
     min: 500,
     max: 3500,
+    type: 'number',
   },
   contrast: {
     label: 'Contrast',
@@ -47,6 +53,7 @@ const config = {
     step: 0.5,
     min: 1,
     max: 5,
+    type: 'number',
   },
   sepia: {
     label: 'Sepia',
@@ -54,6 +61,7 @@ const config = {
     step: 0.1,
     min: 0,
     max: 5,
+    type: 'number',
   },
   text: {
     value: 'Wash your hands',

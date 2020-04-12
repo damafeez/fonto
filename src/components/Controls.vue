@@ -3,27 +3,28 @@
     <TextInput
       v-for="(input, name) in config"
       :key="name"
+      :name="name"
       :step="input.step"
       :min="input.min"
       :max="input.max"
-      :type="input.type"
+      :type="input.type || 'number'"
       :label="input.label"
       :value="input.value"
       :class="{ text: input.type === 'textarea' }"
-      @input="
-        $emit('controlChange', [name, minMax($event, input.min, input.max)])
-      "
+      @input="onInput($event, input.value)"
+      @blur="onBlur($event, input.value)"
     />
     <input
       type="file"
       accept=".png, .jpg, .jpeg"
-      @change="loadFile($event.target.files[0])"
+      @change="$emit('loadFile', $event.target.files[0])"
     />
-    <button @click="download">Download</button>
+    <button @click="$emit('download')">Download</button>
   </aside>
 </template>
 <script>
 import TextInput from '@/components/TextInput'
+import { debounce } from '@/utils'
 
 export default {
   name: 'Controls',
@@ -32,23 +33,25 @@ export default {
   },
   props: {
     config: Object,
-    canvas: Element,
   },
   methods: {
-    minMax(value, min = 0, max = 100) {
-      const val = Number(value)
-
-      if (val <= min) return min
-      if (val >= max) return max
+    onInput: debounce(function(e, defaultValue) {
+      const value = this.normalize(e.target, defaultValue)
+      this.$emit('controlChange', [e.target.name, value])
+    }),
+    onBlur(e, defaultValue) {
+      e.target.value = this.normalize(e.target, defaultValue)
+    },
+    normalize({ value, min, max, type }, defaultValue) {
+      let val = value
+      if (type === 'number') val = this.minMax(+value, +min, +max)
+      else if (!value) val = defaultValue
       return val
     },
-    download() {
-      if (this.canvas) {
-        const link = document.createElement('a')
-        link.download = this.downloadName
-        link.href = this.canvas.toDataURL()
-        link.click()
-      }
+    minMax(value, min = 0, max = 100) {
+      if (value <= min) return min
+      if (value >= max) return max
+      return value
     },
   },
 }
