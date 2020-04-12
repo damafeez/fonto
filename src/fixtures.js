@@ -17,7 +17,7 @@ const config = {
   },
   xMargin: {
     label: 'X-Margin',
-    value: 10,
+    value: 5,
     step: 5,
     min: 0,
     max: 100,
@@ -41,7 +41,7 @@ const config = {
   },
   resolution: {
     label: 'Resolution',
-    value: 2000,
+    value: window.innerWidth < 800 ? 1200 : 2000,
     step: 250,
     min: 500,
     max: 3500,
@@ -64,7 +64,7 @@ const config = {
     type: 'number',
   },
   text: {
-    value: 'Wash your hands',
+    value: 'wash your hands',
     type: 'textarea',
   },
 }

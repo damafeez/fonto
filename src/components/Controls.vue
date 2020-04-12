@@ -38,7 +38,7 @@ export default {
     onInput: debounce(function(e, defaultValue) {
       const value = this.normalize(e.target, defaultValue)
       this.$emit('controlChange', [e.target.name, value])
-    }),
+    }, 800),
     onBlur(e, defaultValue) {
       e.target.value = this.normalize(e.target, defaultValue)
     },
