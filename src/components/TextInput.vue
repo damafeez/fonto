@@ -19,7 +19,7 @@ export default {
     type: {
       type: String,
       validator: type => allowedTypes.includes(type),
-      default: 'number',
+      default: 'text',
     },
     label: String,
     id: {
