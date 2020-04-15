@@ -1,6 +1,7 @@
 import Vue from 'vue'
 import VueWorker from 'vue-worker'
 import App from './App.vue'
+import './polyfills'
 import './styles/globals/index.scss'
 
 Vue.use(VueWorker)
