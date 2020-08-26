@@ -2,7 +2,10 @@
   <aside>
     <TextInput
       v-for="(input, name) in config"
-      v-tooltip.bottom="input.description || input.label"
+      v-tooltip.bottom="{
+        content: input.description || input.label,
+        trigger: 'hover click focus',
+      }"
       :key="name"
       :name="name"
       :step="input.step"
