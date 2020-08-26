@@ -17,6 +17,7 @@ const config = {
   },
   xMargin: {
     label: 'X-Margin',
+    description: 'Horizontal margin between texts.',
     value: 10,
     step: 5,
     min: 0,
@@ -25,22 +26,25 @@ const config = {
   },
   yMargin: {
     label: 'Y-Margin',
+    description: 'Vertical margin between texts.',
     value: 5,
     step: 5,
     min: 0,
     max: 100,
     type: 'number',
   },
-  bTreshold: {
-    label: 'Black Treshold',
+  bThreshold: {
+    label: 'Black Threshold',
+    description: 'Darkness above this threshold turns black.',
     value: 20,
     step: 10,
     min: 0,
     max: 200,
     type: 'number',
   },
-  wTreshold: {
-    label: 'White Treshold',
+  wThreshold: {
+    label: 'White Threshold',
+    description: 'Lightness above this threshold turns black.',
     value: 0,
     step: 5,
     min: 0,
@@ -64,7 +68,7 @@ const config = {
     type: 'number',
   },
   text: {
-    value: 'wash your hands',
+    value: 'Have enough courage to start.',
     type: 'textarea',
   },
 }

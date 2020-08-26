@@ -26,10 +26,10 @@ export default {
     return {
       text: '',
       fontSize: null,
-      bTreshold: null,
+      bThreshold: null,
       xMargin: null,
       yMargin: null,
-      wTreshold: null,
+      wThreshold: null,
       resolution: null,
       contrast: null,
       sepia: null,
@@ -44,7 +44,7 @@ export default {
       return `contrast(${this.contrast}) sepia(${this.sepia})`
     },
     editWatcher() {
-      return this.textData, this.bTreshold, this.wTreshold, new Date()
+      return this.textData, this.bThreshold, this.wThreshold, new Date()
     },
     imgRenderWatcher() {
       return this.processedImageData, this.filter, new Date()
@@ -77,7 +77,9 @@ export default {
       $options: { config },
     } = this
 
-    Object.keys(config).forEach(key => this.modifyData(key, config[key].value))
+    Object.entries(config).forEach(([name, obj]) =>
+      this.modifyData(name, obj.value),
+    )
   },
   watch: {
     editWatcher() {
@@ -115,7 +117,7 @@ export default {
       ctx.drawImage(bitmap, 0, 0)
     },
     editImage() {
-      const { image, bTreshold, wTreshold, canvasSize, textData } = this
+      const { image, bThreshold, wThreshold, canvasSize, textData } = this
       if (!image) return
       const imgCanvas = document.createElement('canvas')
       imgCanvas.width = canvasSize.width
@@ -135,8 +137,8 @@ export default {
           {
             textData,
             imgData,
-            bTreshold,
-            wTreshold,
+            bThreshold,
+            wThreshold,
           },
         ])
         .then(processedImageData => {

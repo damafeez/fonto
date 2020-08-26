@@ -32,28 +32,28 @@ function getTextData({
 
   // background
   ctx.fillStyle = 'black'
-  ctx.fillRect(0, 0, canvas.width, canvas.height)
+  ctx.fillRect(0, 0, canvasSize.width, canvasSize.height)
 
   ctx.fillStyle = 'white'
   const { width: tWidth } = ctx.measureText(text)
   let distx = 0
   let disty = 0
 
-  while (disty < canvas.height) {
+  while (disty < canvasSize.height) {
     ctx.fillText(text, distx, disty)
     distx += tWidth + marginRight
-    if (distx >= canvas.width) {
+    if (distx >= canvasSize.width) {
       disty += tHeight + marginBottom
       distx = Math.random() * -100
     }
   }
 
   return Float32Array.from(
-    ctx.getImageData(0, 0, canvas.width, canvas.height).data,
+    ctx.getImageData(0, 0, canvasSize.width, canvasSize.height).data,
   )
 }
 
-function processImage({ imgData, textData, bTreshold, wTreshold }) {
+function processImage({ imgData, textData, bThreshold, wThreshold }) {
   const { data } = imgData
   for (let i = 0; i < imgData.data.length; i += 4) {
     const r = data[i + 0]
@@ -64,8 +64,8 @@ function processImage({ imgData, textData, bTreshold, wTreshold }) {
       (textData[i + 0] === 0 &&
         textData[i + 1] === 0 &&
         textData[i + 2] === 0) ||
-      gray < bTreshold ||
-      gray > 255 - wTreshold
+      gray < bThreshold ||
+      gray > 255 - wThreshold
     ) {
       data[i + 0] = 0
       data[i + 1] = 0

@@ -2,6 +2,7 @@
   <aside>
     <TextInput
       v-for="(input, name) in config"
+      v-tooltip.bottom="input.description || input.label"
       :key="name"
       :name="name"
       :step="input.step"

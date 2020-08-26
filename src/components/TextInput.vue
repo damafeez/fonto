@@ -1,5 +1,5 @@
 <template>
-  <div :title="label" class="text-input">
+  <div class="text-input">
     <textarea
       v-if="type === 'textarea'"
       :id="id"

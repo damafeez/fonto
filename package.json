@@ -1,5 +1,5 @@
 {
-  "name": "fonto",
+  "name": "Fonto",
   "description": "A webtool for creating beautiful textified photographs",
   "version": "0.1.0",
   "private": true,
@@ -11,6 +11,9 @@
   },
   "dependencies": {
     "core-js": "^3.6.4",
+    "install": "^0.13.0",
+    "npm": "^6.14.8",
+    "v-tooltip": "^2.0.3",
     "vue": "^2.6.11",
     "vue-worker": "^1.2.1"
   },
